@@ -20,6 +20,7 @@ void std_example() {
   int ii = {2.0};  // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
   float f1 { x };  // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
   float f2 { 7 };  // OK: 7 can be exactly represented as a float
+  bool b = {"meow"};  // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
   int f(int);
   int a[] =
     { 2, f(2), f(2.0) };  // OK: the double-to-int conversion is not at the top level
@@ -131,7 +132,7 @@ void int_to_float() {
 //   cannot represent all the values of the original type, except where the
 //   source is a constant expression and the actual value after conversion will
 //   fit into the target type and will produce the original value when converted
-//   back to the original type.
+//   back to the original type, or
 void shrink_int() {
   // Not a constant expression.
   short s = 1;
@@ -163,12 +164,22 @@ void shrink_int() {
   Agg<bool> b2 = {1};  // OK
   Agg<bool> b3 = {-1};  // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
 
-  // Conversions from pointers to booleans aren't narrowing conversions.
-  Agg<bool>* ptr = &b1;
-  Agg<bool> b = {ptr};  // OK
-
   Agg<short> ce1 = { Convert<int>(100000) }; // expected-warning {{constant expression evaluates to 100000 which cannot be narrowed to type 'short'}} expected-note {{silence}} expected-warning {{changes value from 100000 to -31072}}
   Agg<char> ce2 = { ConvertVar<short>() }; // expected-warning {{non-constant-expression cannot be narrowed from type 'short' to 'char'}} expected-note {{silence}}
+}
+
+// * from a pointer type or a pointer-to-member type to bool.
+void pointer_to_bool() {
+  Agg<int> obj;
+  Agg<int> *p1 = &obj;
+  constexpr void *p2 = nullptr;
+
+  Agg<bool> b1 = {p1};           // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
+  Agg<bool> b2 = {p2};           // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
+  Agg<bool> b3 = {&Agg<int>::t}; // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
+
+  Agg<bool> b4 = {ConvertVar<int *>()};           // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
+  Agg<bool> b5 = {ConvertVar<int Agg<int>::*>()}; // expected-warning {{ cannot be narrowed }} expected-note {{silence}}
 }
 
 // Be sure that type- and value-dependent expressions in templates get the warning

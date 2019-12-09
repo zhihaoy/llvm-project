@@ -9533,9 +9533,9 @@ static void DiagnoseNarrowingInInitList(Sema &S,
     return;
 
   case NK_Type_Narrowing:
-    // This was a floating-to-integer conversion, which is always considered a
-    // narrowing conversion even if the value is a constant and can be
-    // represented exactly as an integer.
+    // This was a floating-to-integer conversion or a boolean conversion from a
+    // pointer, which is always considered a narrowing conversion even if the
+    // value is a constant and can be represented exactly as an integer.
     S.Diag(PostInit->getBeginLoc(), NarrowingErrs(S.getLangOpts())
                                         ? diag::ext_init_list_type_narrowing
                                         : diag::warn_init_list_type_narrowing)
