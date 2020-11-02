@@ -1468,12 +1468,42 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
   // C++1z [expr.type.conv]p1:
   //   If the type is a placeholder for a deduced class type, [...perform class
   //   template argument deduction...]
+  // C++2b:
+  //   Otherwise, if the type contains a placeholder type, it is replaced by the
+  //   type determined by placeholder type deduction.
   DeducedType *Deduced = Ty->getContainedDeducedType();
   if (Deduced && isa<DeducedTemplateSpecializationType>(Deduced)) {
     Ty = DeduceTemplateSpecializationFromInitializer(TInfo, Entity,
                                                      Kind, Exprs);
     if (Ty.isNull())
       return ExprError();
+    Entity = InitializedEntity::InitializeTemporary(TInfo, Ty);
+  } else if (Deduced) {
+    auto Inits = Exprs;
+    if (Exprs.size() == 1) {
+      if (auto p = dyn_cast_or_null<InitListExpr>(Exprs[0])) {
+        Inits = MultiExprArg(p->getInits(), p->getNumInits());
+      }
+    }
+
+    if (Inits.empty())
+      return ExprError(Diag(TyBeginLoc, diag::err_auto_expr_init_no_expression)
+                       << Ty << FullRange);
+    if (Inits.size() > 1) {
+      Expr *FirstBad = Inits[1];
+      return ExprError(Diag(FirstBad->getBeginLoc(),
+                            diag::err_auto_expr_init_multiple_expressions)
+                       << Ty << FullRange);
+    }
+    Expr *Deduce = Inits[0];
+    QualType DeducedType;
+    if (DeduceAutoType(TInfo, Deduce, DeducedType) == DAR_Failed)
+      return ExprError(Diag(TyBeginLoc, diag::err_auto_expr_deduction_failure)
+                       << Ty << Deduce->getType() << FullRange
+                       << Deduce->getSourceRange());
+    if (DeducedType.isNull())
+      return ExprError();
+    Ty = DeducedType;
     Entity = InitializedEntity::InitializeTemporary(TInfo, Ty);
   }
 

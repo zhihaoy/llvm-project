@@ -3509,6 +3509,8 @@ static QualType GetDeclSpecTypeForDeclarator(TypeProcessingState &state,
     case DeclaratorContext::FunctionalCast:
       if (isa<DeducedTemplateSpecializationType>(Deduced))
         break;
+      if (SemaRef.getLangOpts().CPlusPlus2b && IsCXXAutoType)
+        break; // auto(x) and decltype(auto)(x)
       LLVM_FALLTHROUGH;
     case DeclaratorContext::TypeName:
       Error = 15; // Generic
