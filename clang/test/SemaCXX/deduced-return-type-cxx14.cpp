@@ -442,6 +442,15 @@ namespace DecltypeAutoShouldNotBeADecltypeSpecifier {
       B() : decltype(auto)() {} // expected-error {{'decltype(auto)' not allowed here}}
     };
   }
+
+  namespace Cast {
+    void foo() {
+      (void)decltype(auto)(0); // cxx14_20-error{{'decltype(auto)' not allowed here}} \
+                                  cxx2b-warning{{ISO C++23 DIS does not allow functional-style cast to 'decltype(auto)'}}
+      (void)decltype(auto){0}; // cxx14_20-error{{'decltype(auto)' not allowed here}} \
+                                  cxx2b-warning{{ISO C++23 DIS does not allow functional-style cast to 'decltype(auto)'}}
+    }
+  }
 }
 
 namespace CurrentInstantiation {

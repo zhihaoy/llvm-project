@@ -1479,11 +1479,10 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
       return ExprError();
     Entity = InitializedEntity::InitializeTemporary(TInfo, Ty);
   } else if (Deduced) {
-    auto Inits = Exprs;
-    if (Exprs.size() == 1) {
-      if (auto p = dyn_cast_or_null<InitListExpr>(Exprs[0])) {
-        Inits = MultiExprArg(p->getInits(), p->getNumInits());
-      }
+    MultiExprArg Inits = Exprs;
+    if (ListInitialization) {
+      auto *ILE = cast<InitListExpr>(Exprs[0]);
+      Inits = MultiExprArg(ILE->getInits(), ILE->getNumInits());
     }
 
     if (Inits.empty())
@@ -1495,7 +1494,18 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
                             diag::err_auto_expr_init_multiple_expressions)
                        << Ty << FullRange);
     }
+    if (getLangOpts().CPlusPlus2b) {
+      if (auto *TyAuto = Ty->getAs<AutoType>())
+        Diag(TyBeginLoc, TyAuto->isDecltypeAuto()
+                             ? diag::ext_decltype_auto_expr
+                             : diag::warn_cxx20_compat_auto_expr)
+            << FullRange;
+    }
     Expr *Deduce = Inits[0];
+    if (isa<InitListExpr>(Deduce))
+      return ExprError(
+          Diag(Deduce->getBeginLoc(), diag::err_auto_expr_init_paren_braces)
+          << ListInitialization << Ty << FullRange);
     QualType DeducedType;
     if (DeduceAutoType(TInfo, Deduce, DeducedType) == DAR_Failed)
       return ExprError(Diag(TyBeginLoc, diag::err_auto_expr_deduction_failure)
@@ -1503,7 +1513,14 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
                        << Deduce->getSourceRange());
     if (DeducedType.isNull())
       return ExprError();
+
     Ty = DeducedType;
+    if (Ty->isReferenceType()) {
+      // decltype(auto)(x) takes a shortcut; see also P0849R2.
+      return BuildCXXFunctionalCastExpr(SubstAutoTypeSourceInfo(TInfo, Ty), Ty,
+                                        LParenOrBraceLoc, Deduce,
+                                        RParenOrBraceLoc);
+    }
     Entity = InitializedEntity::InitializeTemporary(TInfo, Ty);
   }
 
@@ -2013,12 +2030,10 @@ Sema::BuildCXXNew(SourceRange Range, bool UseGlobal,
       return ExprError();
   } else if (Deduced) {
     bool Braced = (initStyle == CXXNewExpr::ListInit);
-    if (NumInits == 1) {
-      if (auto p = dyn_cast_or_null<InitListExpr>(Inits[0])) {
-        Inits = p->getInits();
-        NumInits = p->getNumInits();
-        Braced = true;
-      }
+    if (Braced) {
+      auto *ILE = cast<InitListExpr>(Inits[0]);
+      Inits = ILE->getInits();
+      NumInits = ILE->getNumInits();
     }
 
     if (initStyle == CXXNewExpr::NoInit || NumInits == 0)
@@ -2034,6 +2049,10 @@ Sema::BuildCXXNew(SourceRange Range, bool UseGlobal,
       Diag(Initializer->getBeginLoc(), diag::ext_auto_new_list_init)
           << AllocType << TypeRange;
     Expr *Deduce = Inits[0];
+    if (isa<InitListExpr>(Deduce))
+      return ExprError(
+          Diag(Deduce->getBeginLoc(), diag::err_auto_expr_init_paren_braces)
+          << Braced << AllocType << TypeRange);
     QualType DeducedType;
     if (DeduceAutoType(AllocTypeInfo, Deduce, DeducedType) == DAR_Failed)
       return ExprError(Diag(StartLoc, diag::err_auto_new_deduction_failure)

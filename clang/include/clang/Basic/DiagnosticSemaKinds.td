@@ -2331,6 +2331,12 @@ def err_auto_var_init_paren_braces : Error<
   "%select{parenthesized|nested}0 initializer list">;
 def err_auto_new_ctor_multiple_expressions : Error<
   "new expression for type %0 contains multiple constructor arguments">;
+def err_auto_expr_init_paren_braces : Error<
+  "cannot deduce actual type for %1 from "
+  "%select{parenthesized|nested}0 initializer list">;
+def warn_cxx20_compat_auto_expr : Warning<
+  "'auto' as a functional-style cast is incompatible with C++ standards "
+  "before C++2b">, InGroup<CXXPre2bCompat>, DefaultIgnore;
 def err_auto_missing_trailing_return : Error<
   "'auto' return without trailing return type; deduced return types are a "
   "C++14 extension">;
@@ -2381,6 +2387,9 @@ def err_decltype_auto_compound_type : Error<
   "cannot form %select{pointer to|reference to|array of}0 'decltype(auto)'">;
 def err_decltype_auto_initializer_list : Error<
   "cannot deduce 'decltype(auto)' from initializer list">;
+def ext_decltype_auto_expr : ExtWarn<
+  "ISO C++23 DIS does not allow functional-style cast to 'decltype(auto)'">,
+  InGroup<DiagGroup<"decltype-auto-cast">>;
 
 // C++17 deduced class template specialization types
 def err_deduced_class_template_compound_type : Error<
