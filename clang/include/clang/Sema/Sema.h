@@ -2964,6 +2964,7 @@ public:
                                                    bool IsDefinition);
   void CheckFunctionOrTemplateParamDeclarator(Scope *S, Declarator &D);
   Decl *ActOnParamDeclarator(Scope *S, Declarator &D);
+  DeclResult ActOnCXXNamedArgSpecifier(Scope *S, StringLiteral *Name);
   ParmVarDecl *BuildParmVarDeclForTypedef(DeclContext *DC,
                                           SourceLocation Loc,
                                           QualType T);

@@ -449,6 +449,11 @@ void Sema::CheckExtraCXXDefaultArguments(Declarator &D) {
   }
 }
 
+DeclResult Sema::ActOnCXXNamedArgSpecifier(Scope *S, StringLiteral *Name) {
+  assert(Name->isOrdinary());
+  return {};
+}
+
 static bool functionDeclHasDefaultArgument(const FunctionDecl *FD) {
   return llvm::any_of(FD->parameters(), [](ParmVarDecl *P) {
     return P->hasDefaultArg() && !P->hasInheritedDefaultArg();

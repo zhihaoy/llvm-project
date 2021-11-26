@@ -7198,6 +7198,17 @@ void Parser::ParseParameterDeclarationClause(
       MaybeParseMicrosoftAttributes(ArgDeclSpecAttrs);
     }
 
+    // Parse name of a named argument
+    if (getLangOpts().CPlusPlus2b && Tok.is(tok::string_literal)) {
+      if (auto *Name = cast_or_null<StringLiteral>(
+              ParseStringLiteralExpression(false).get())) {
+        DeclResult ImpliedParam =
+            Actions.ActOnCXXNamedArgSpecifier(getCurScope(), Name);
+        if (ImpliedParam.isUsable())
+          ParamInfo.emplace_back(nullptr, SourceLocation(), ImpliedParam.get());
+      }
+    }
+
     SourceLocation DSStart = Tok.getLocation();
 
     ParseDeclarationSpecifiers(DS, /*TemplateInfo=*/ParsedTemplateInfo(),
