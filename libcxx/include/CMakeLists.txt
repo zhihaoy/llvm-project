@@ -822,6 +822,7 @@ set(files
   memory
   memory_resource
   mutex
+  namedarg
   new
   numbers
   numeric

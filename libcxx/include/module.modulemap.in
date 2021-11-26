@@ -1112,6 +1112,10 @@ module std [system] {
     header "mutex"
     export *
   }
+  module namedarg {
+    header "namedarg"
+    export *
+  }
   module new {
     header "new"
     export *

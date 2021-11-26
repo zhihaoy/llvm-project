@@ -1,0 +1,65 @@
+// -*- C++ -*-
+//===----------------------------------------------------------------------===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+#ifndef _LIBCPP_NAMEDARG
+#define _LIBCPP_NAMEDARG
+
+#include <__config>
+
+#if !defined(_LIBCPP_HAS_NO_PRAGMA_SYSTEM_HEADER)
+#  pragma GCC system_header
+#endif
+
+namespace std // purposefully not versioned
+{
+
+#if _LIBCPP_STD_VER > 20
+
+template <class _Tp, _Tp... _Ip>
+class __idx_seq {};
+
+#  if __has_builtin(__make_integer_seq) && !defined(_LIBCPP_TESTING_FALLBACK_MAKE_INTEGER_SEQUENCE)
+
+template <int _Np>
+using __make_idx_seq = __make_integer_seq<__idx_seq, int, _Np>;
+
+#  else
+
+template <int _Np, int... _Ip>
+struct __make_idx_seq : __make_idx_seq<_Np - 1, _Np - 1, _Ip...> {};
+
+template <int... _Ip>
+struct __make_idx_seq<0, _Ip...> : __idx_seq<int, _Ip...> {};
+
+#  endif
+
+template <int _Np>
+struct __string_literal {
+  constexpr __string_literal(char const (&__s)[_Np]) : __string_literal(__s, __make_idx_seq<_Np>()) {}
+  char value[_Np];
+
+private:
+  template <int... _Ip>
+  constexpr __string_literal(char const (&__s)[_Np], __idx_seq<int, _Ip...>) : value{__s[_Ip]...} {}
+};
+
+template <__string_literal _Tag>
+struct _LIBCPP_TEMPLATE_VIS named_t {
+  explicit named_t() = default;
+  static constexpr decltype(_Tag.value) const& key{_Tag.value};
+};
+
+template <__string_literal _Tag>
+inline constexpr named_t<_Tag> named{};
+
+#endif
+
+} // namespace std
+
+#endif
