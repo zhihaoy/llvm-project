@@ -3438,7 +3438,13 @@ bool Parser::ParseExpressionList(SmallVectorImpl<Expr *> &Exprs,
       ExpressionStarts();
 
     if (getLangOpts().CPlusPlus2b && Tok.is(tok::period)) {
-      ParseNamedArgumentStart();
+      ExprResult Expr = ParseNamedArgumentStart();
+      if (Expr.isInvalid()) {
+        SkipUntil(tok::comma, tok::r_paren, StopBeforeMatch);
+        SawError = true;
+      } else {
+        Exprs.push_back(Expr.get());
+      }
     }
 
     ExprResult Expr;

@@ -9140,7 +9140,22 @@ Sema::ActOnRequiresExpr(SourceLocation RequiresKWLoc,
   return RE;
 }
 
+static auto MakePRValueOf(QualType Ty, Sema &S, SourceLocation Loc)
+    -> ExprResult {
+  auto Entity = InitializedEntity::InitializeTemporary(Ty);
+  auto Kind = InitializationKind::CreateDefault(Loc);
+  InitializationSequence InitSeq(S, Entity, Kind, {});
+  return InitSeq.Perform(S, Entity, Kind, {});
+}
+
 ExprResult Sema::ActOnCXXNamedArgument(IdentifierInfo &II,
                                        SourceLocation IdentLoc) {
-  return true;
+  Expr *Name = StringLiteral::Create(
+      Context, II.getName(), StringLiteral::Ordinary, false,
+      Context.getStringLiteralArrayType(Context.CharTy, II.getLength()),
+      SourceLocation());
+  QualType Ty = BuildStdNameT(Name, SourceLocation());
+  if (Ty.isNull())
+    return ExprError();
+  return MakePRValueOf(Ty, *this, IdentLoc);
 }
