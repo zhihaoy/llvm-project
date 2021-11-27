@@ -5917,6 +5917,8 @@ public:
                                         bool GNUSyntax,
                                         ExprResult Init);
 
+  ExprResult ActOnCXXNamedArgument(IdentifierInfo &II, SourceLocation IdentLoc);
+
 private:
   static BinaryOperatorKind ConvertTokenKindToBinaryOpcode(tok::TokenKind Kind);
 

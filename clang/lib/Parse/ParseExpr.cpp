@@ -3437,6 +3437,10 @@ bool Parser::ParseExpressionList(SmallVectorImpl<Expr *> &Exprs,
     if (ExpressionStarts)
       ExpressionStarts();
 
+    if (getLangOpts().CPlusPlus2b && Tok.is(tok::period)) {
+      ParseNamedArgumentStart();
+    }
+
     ExprResult Expr;
     if (getLangOpts().CPlusPlus11 && Tok.is(tok::l_brace)) {
       Diag(Tok, diag::warn_cxx98_compat_generalized_initializer_lists);
@@ -3512,6 +3516,28 @@ bool Parser::ParseSimpleExpressionList(SmallVectorImpl<Expr *> &Exprs) {
     ConsumeToken();
     checkPotentialAngleBracketDelimiter(Comma);
   }
+}
+
+ExprResult Parser::ParseNamedArgumentStart() {
+  assert(Tok.is(tok::period) && "Not a named argument!");
+  ConsumeToken();
+
+  if (Tok.isNot(tok::identifier)) {
+    return Diag(Tok.getLocation(), diag::err_expected_named_argument);
+  }
+
+  IdentifierInfo &II = *Tok.getIdentifierInfo();
+  ExprResult NamedObj = Actions.ActOnCXXNamedArgument(II, ConsumeToken());
+
+  if (Tok.isNot(tok::equal)) {
+    return Diag(Tok.getLocation(),
+                Tok.is(tok::l_brace)
+                    ? diag::err_unexpected_braced_named_argument
+                    : diag::err_expected_named_argument);
+  }
+  ConsumeToken();
+
+  return NamedObj;
 }
 
 /// ParseBlockId - Parse a block-id, which roughly looks like int (int x).

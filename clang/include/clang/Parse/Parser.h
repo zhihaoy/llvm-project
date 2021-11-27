@@ -2045,6 +2045,7 @@ private:
     QualType PreferredBaseType;
   };
   ExprResult ParseInitializerWithPotentialDesignator(DesignatorCompletionInfo);
+  ExprResult ParseNamedArgumentStart();
 
   //===--------------------------------------------------------------------===//
   // clang Expressions

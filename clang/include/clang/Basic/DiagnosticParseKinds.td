@@ -534,6 +534,10 @@ def note_extra_comma_message_arg : Note<
 
 def err_expected_field_designator : Error<
   "expected a field designator, such as '.field = 4'">;
+def err_expected_named_argument : Error<
+  "expected a named argument, such as '.name = 42'">;
+def err_unexpected_braced_named_argument : Error<
+  "initializer for named argument must follow '='">;
 
 def err_declaration_does_not_declare_param : Error<
   "declaration does not declare a parameter">;

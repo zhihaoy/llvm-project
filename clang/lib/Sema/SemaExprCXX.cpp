@@ -9139,3 +9139,8 @@ Sema::ActOnRequiresExpr(SourceLocation RequiresKWLoc,
     return ExprError();
   return RE;
 }
+
+ExprResult Sema::ActOnCXXNamedArgument(IdentifierInfo &II,
+                                       SourceLocation IdentLoc) {
+  return true;
+}
