@@ -2401,6 +2401,11 @@ def err_implied_std_initializer_list_not_found : Error<
   "not found; include <initializer_list>">;
 def err_malformed_std_initializer_list : Error<
   "std::initializer_list must be a class template with a single type parameter">;
+def err_implied_std_named_t_not_found : Error<
+  "cannot emit implied parameter for named argument because std::named_t was "
+  "not found; include <namedarg>">;
+def err_malformed_std_named_t : Error<
+  "std::named_t must be a class template with a single non-type parameter">;
 def err_auto_init_list_from_c : Error<
   "cannot use __auto_type with initializer list in C">;
 def err_auto_bitfield : Error<

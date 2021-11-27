@@ -451,7 +451,19 @@ void Sema::CheckExtraCXXDefaultArguments(Declarator &D) {
 
 DeclResult Sema::ActOnCXXNamedArgSpecifier(Scope *S, StringLiteral *Name) {
   assert(Name->isOrdinary());
-  return {};
+  SourceLocation Loc = Name->getBeginLoc();
+  QualType ImpliedParamTy = BuildStdNameT(Name, Loc);
+  if (ImpliedParamTy.isNull())
+    return true;
+
+  ParmVarDecl *ImpliedParam = ParmVarDecl::Create(
+      Context, S->getEntity(), Loc, Loc, /* Id= */ nullptr, ImpliedParamTy,
+      /* TInfo= */ nullptr, SC_None, nullptr);
+  ImpliedParam->setImplicit();
+  ImpliedParam->setScopeInfo(S->getFunctionPrototypeDepth() - 1,
+                             S->getNextFunctionPrototypeIndex());
+  S->AddDecl(ImpliedParam);
+  return ImpliedParam;
 }
 
 static bool functionDeclHasDefaultArgument(const FunctionDecl *FD) {
@@ -11619,17 +11631,20 @@ bool Sema::isStdInitializerList(QualType Ty, QualType *Element) {
   return true;
 }
 
-static ClassTemplateDecl *LookupStdInitializerList(Sema &S, SourceLocation Loc){
+template <class ParamKind>
+static ClassTemplateDecl *LookupStd(StringRef TemplateName, Sema &S,
+                                    SourceLocation Loc, unsigned DiagNotFound,
+                                    unsigned DiagMalformed) {
   NamespaceDecl *Std = S.getStdNamespace();
   if (!Std) {
-    S.Diag(Loc, diag::err_implied_std_initializer_list_not_found);
+    S.Diag(Loc, DiagNotFound);
     return nullptr;
   }
 
-  LookupResult Result(S, &S.PP.getIdentifierTable().get("initializer_list"),
-                      Loc, Sema::LookupOrdinaryName);
+  LookupResult Result(S, &S.PP.getIdentifierTable().get(TemplateName), Loc,
+                      Sema::LookupOrdinaryName);
   if (!S.LookupQualifiedName(Result, Std)) {
-    S.Diag(Loc, diag::err_implied_std_initializer_list_not_found);
+    S.Diag(Loc, DiagNotFound);
     return nullptr;
   }
   ClassTemplateDecl *Template = Result.getAsSingle<ClassTemplateDecl>();
@@ -11637,20 +11652,27 @@ static ClassTemplateDecl *LookupStdInitializerList(Sema &S, SourceLocation Loc){
     Result.suppressDiagnostics();
     // We found something weird. Complain about the first thing we found.
     NamedDecl *Found = *Result.begin();
-    S.Diag(Found->getLocation(), diag::err_malformed_std_initializer_list);
+    S.Diag(Found->getLocation(), DiagMalformed);
     return nullptr;
   }
 
-  // We found some template called std::initializer_list. Now verify that it's
-  // correct.
+  // We found some template. Now verify that it's correct.
   TemplateParameterList *Params = Template->getTemplateParameters();
   if (Params->getMinRequiredArguments() != 1 ||
-      !isa<TemplateTypeParmDecl>(Params->getParam(0))) {
-    S.Diag(Template->getLocation(), diag::err_malformed_std_initializer_list);
+      !isa<ParamKind>(Params->getParam(0))) {
+    S.Diag(Template->getLocation(), DiagMalformed);
     return nullptr;
   }
 
   return Template;
+}
+
+static auto LookupStdInitializerList(Sema &S, SourceLocation Loc)
+    -> ClassTemplateDecl * {
+  return LookupStd<TemplateTypeParmDecl>(
+      "initializer_list", S, Loc,
+      diag::err_implied_std_initializer_list_not_found,
+      diag::err_malformed_std_initializer_list);
 }
 
 QualType Sema::BuildStdInitializerList(QualType Element, SourceLocation Loc) {
@@ -11684,6 +11706,26 @@ bool Sema::isInitListConstructor(const FunctionDecl *Ctor) {
     ArgType = RT->getPointeeType().getUnqualifiedType();
 
   return isStdInitializerList(ArgType, nullptr);
+}
+
+static auto LookupStdNamedT(Sema &S, SourceLocation Loc)
+    -> ClassTemplateDecl * {
+  return LookupStd<NonTypeTemplateParmDecl>(
+      "named_t", S, Loc, diag::err_implied_std_named_t_not_found,
+      diag::err_malformed_std_named_t);
+}
+
+QualType Sema::BuildStdNameT(Expr *Tag, SourceLocation Loc) {
+  if (!StdNamedT) {
+    StdNamedT = LookupStdNamedT(*this, Loc);
+    if (!StdNamedT)
+      return QualType();
+  }
+
+  TemplateArgumentListInfo Args(Loc, Loc);
+  Args.addArgument(TemplateArgumentLoc(TemplateArgument(Tag), Tag));
+  return Context.getCanonicalType(
+      CheckTemplateIdType(TemplateName(StdNamedT), Loc, Args));
 }
 
 /// Determine whether a using statement is in a context where it will be

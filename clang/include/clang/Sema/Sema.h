@@ -1145,6 +1145,10 @@ public:
   /// \<initializer_list>.
   ClassTemplateDecl *StdInitializerList;
 
+  /// The C++ "std::named_t" template, which is defined in
+  /// \<namedarg>.
+  ClassTemplateDecl *StdNamedT;
+
   /// The C++ "std::coroutine_traits" template, which is defined in
   /// \<coroutine_traits>
   ClassTemplateDecl *StdCoroutineTraitsCache;
@@ -6140,6 +6144,12 @@ public:
   /// Determine whether Ctor is an initializer-list constructor, as
   /// defined in [dcl.init.list]p2.
   bool isInitListConstructor(const FunctionDecl *Ctor);
+
+  /// Looks for the std::name_t template and instantiates it with Tag, or emits
+  /// an error if it's not found.
+  ///
+  /// \returns The instantiated template, or null on error.
+  QualType BuildStdNameT(Expr *Tag, SourceLocation Loc);
 
   Decl *ActOnUsingDirective(Scope *CurScope, SourceLocation UsingLoc,
                             SourceLocation NamespcLoc, CXXScopeSpec &SS,
