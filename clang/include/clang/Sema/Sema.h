@@ -6145,6 +6145,12 @@ public:
   /// defined in [dcl.init.list]p2.
   bool isInitListConstructor(const FunctionDecl *Ctor);
 
+  /// Tests whether Ty is an instance of std::named_t.
+  bool isStdNamedT(QualType Ty);
+
+  /// Determine whether a parameter is of a std::named_t variant
+  bool isOfStdNamedT(ParmVarDecl *Param);
+
   /// Looks for the std::name_t template and instantiates it with Tag, or emits
   /// an error if it's not found.
   ///

@@ -1648,6 +1648,8 @@ void Sema::CheckCXXDefaultArguments(FunctionDecl *FD) {
   // Find first parameter with a default argument
   for (; ParamIdx < NumParams; ++ParamIdx) {
     ParmVarDecl *Param = FD->getParamDecl(ParamIdx);
+    if (getLangOpts().CPlusPlus2b && isOfStdNamedT(Param))
+      return;
     if (Param->hasDefaultArg())
       break;
   }
@@ -1659,6 +1661,8 @@ void Sema::CheckCXXDefaultArguments(FunctionDecl *FD) {
   //   parameter pack, or shall be a function parameter pack.
   for (; ParamIdx < NumParams; ++ParamIdx) {
     ParmVarDecl *Param = FD->getParamDecl(ParamIdx);
+    if (getLangOpts().CPlusPlus2b && isOfStdNamedT(Param))
+      return;
     if (!Param->hasDefaultArg() && !Param->isParameterPack() &&
         !(CurrentInstantiationScope &&
           CurrentInstantiationScope->isLocalPackExpansion(Param))) {
@@ -11571,6 +11575,24 @@ NamespaceDecl *Sema::getOrCreateStdNamespace() {
   return getStdNamespace();
 }
 
+template <class ParamKind>
+static auto TryClassTemplate(ClassTemplateDecl *Template, Sema &S,
+                             StringRef Name) -> ClassTemplateDecl * {
+  CXXRecordDecl *TemplateClass = Template->getTemplatedDecl();
+  if (TemplateClass->getIdentifier() != &S.PP.getIdentifierTable().get(Name) ||
+      !S.getStdNamespace()->InEnclosingNamespaceSetOf(
+          TemplateClass->getDeclContext()))
+    return nullptr;
+
+  // This is a template called Name, but is it the right template?
+  TemplateParameterList *Params = Template->getTemplateParameters();
+  if (Params->getMinRequiredArguments() == 1 &&
+      isa<ParamKind>(Params->getParam(0)))
+    return Template;
+  else
+    return nullptr;
+}
+
 bool Sema::isStdInitializerList(QualType Ty, QualType *Element) {
   assert(getLangOpts().CPlusPlus &&
          "Looking for std::initializer_list outside of C++.");
@@ -11604,22 +11626,9 @@ bool Sema::isStdInitializerList(QualType Ty, QualType *Element) {
 
   if (!StdInitializerList) {
     // Haven't recognized std::initializer_list yet, maybe this is it.
-    CXXRecordDecl *TemplateClass = Template->getTemplatedDecl();
-    if (TemplateClass->getIdentifier() !=
-            &PP.getIdentifierTable().get("initializer_list") ||
-        !getStdNamespace()->InEnclosingNamespaceSetOf(
-            TemplateClass->getDeclContext()))
+    if (!(StdInitializerList = TryClassTemplate<TemplateTypeParmDecl>(
+              Template, *this, "initializer_list")))
       return false;
-    // This is a template called std::initializer_list, but is it the right
-    // template?
-    TemplateParameterList *Params = Template->getTemplateParameters();
-    if (Params->getMinRequiredArguments() != 1)
-      return false;
-    if (!isa<TemplateTypeParmDecl>(Params->getParam(0)))
-      return false;
-
-    // It's the right template.
-    StdInitializerList = Template;
   }
 
   if (Template->getCanonicalDecl() != StdInitializerList->getCanonicalDecl())
@@ -11706,6 +11715,43 @@ bool Sema::isInitListConstructor(const FunctionDecl *Ctor) {
     ArgType = RT->getPointeeType().getUnqualifiedType();
 
   return isStdInitializerList(ArgType, nullptr);
+}
+
+bool Sema::isStdNamedT(QualType Ty) {
+  assert(getLangOpts().CPlusPlus && "Looking for std::name_t outside of C++.");
+
+  if (!StdNamespace)
+    return false;
+
+  ClassTemplateDecl *Template = nullptr;
+  if (const RecordType *RT = Ty->getAs<RecordType>()) {
+
+    auto *Specialization =
+        dyn_cast<ClassTemplateSpecializationDecl>(RT->getDecl());
+    if (!Specialization)
+      return false;
+
+    Template = Specialization->getSpecializedTemplate();
+  } else if (const TemplateSpecializationType *TST =
+                 Ty->getAs<TemplateSpecializationType>()) {
+    Template = dyn_cast_or_null<ClassTemplateDecl>(
+        TST->getTemplateName().getAsTemplateDecl());
+  }
+  if (!Template)
+    return false;
+
+  if (!StdNamedT) {
+    // Haven't recognized std::named_t yet, maybe this is it.
+    return (StdNamedT = TryClassTemplate<NonTypeTemplateParmDecl>(
+                Template, *this, "named_t"));
+  }
+
+  return Template->getCanonicalDecl() == StdNamedT->getCanonicalDecl();
+}
+
+bool Sema::isOfStdNamedT(ParmVarDecl *Param) {
+  return isStdNamedT(
+      Param->getType().getNonReferenceType().getUnqualifiedType());
 }
 
 static auto LookupStdNamedT(Sema &S, SourceLocation Loc)
