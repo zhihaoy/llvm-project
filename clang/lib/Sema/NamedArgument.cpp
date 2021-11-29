@@ -14,4 +14,10 @@ void NamedArgumentContext::enterKey(StringLiteral *Tag) {
   }
 }
 
+void NamedArgumentContext::enterValue(Declarator &D, Decl *Param) {
+  if (Param->isParameterPack())
+    S.Diag(D.getEllipsisLoc(), diag::err_param_namedarg_is_parameter_pack)
+        << D.getSourceRange();
+}
+
 } // namespace clang

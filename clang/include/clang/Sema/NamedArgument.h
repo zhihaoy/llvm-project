@@ -19,6 +19,8 @@
 
 namespace clang {
 
+class Decl;
+class Declarator;
 class Sema;
 class StringLiteral;
 
@@ -30,6 +32,7 @@ public:
   explicit NamedArgumentContext(Sema &S) : S(S) {}
 
   void enterKey(StringLiteral *Tag);
+  void enterValue(Declarator &D, Decl *Param);
 };
 
 } // namespace clang
