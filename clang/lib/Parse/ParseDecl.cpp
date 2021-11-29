@@ -22,6 +22,7 @@
 #include "clang/Parse/Parser.h"
 #include "clang/Parse/RAIIObjectsForParser.h"
 #include "clang/Sema/Lookup.h"
+#include "clang/Sema/NamedArgument.h"
 #include "clang/Sema/ParsedTemplate.h"
 #include "clang/Sema/Scope.h"
 #include "clang/Sema/SemaDiagnostic.h"
@@ -7171,6 +7172,8 @@ void Parser::ParseParameterDeclarationClause(
     AllowImplicitTypename = ImplicitTypenameContext::Yes;
   }
 
+  NamedArgumentContext NamedArgs(Actions);
+
   do {
     // FIXME: Issue a diagnostic if we parsed an attribute-specifier-seq
     // before deciding this was a parameter-declaration-clause.
@@ -7202,6 +7205,7 @@ void Parser::ParseParameterDeclarationClause(
     if (getLangOpts().CPlusPlus2b && Tok.is(tok::string_literal)) {
       if (auto *Name = cast_or_null<StringLiteral>(
               ParseStringLiteralExpression(false).get())) {
+        NamedArgs.enterKey(Name);
         DeclResult ImpliedParam =
             Actions.ActOnCXXNamedArgSpecifier(getCurScope(), Name);
         if (ImpliedParam.isUsable())

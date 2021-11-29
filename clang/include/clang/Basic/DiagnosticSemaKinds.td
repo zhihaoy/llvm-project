@@ -4425,6 +4425,8 @@ def err_param_default_argument_member_template_redecl : Error<
   "class in a template}0">;
 def err_param_default_argument_on_parameter_pack : Error<
   "parameter pack cannot have a default argument">;
+def err_param_namedarg_redefinition : Error<
+  "redefinition of named argument %0">;
 def err_uninitialized_member_for_assign : Error<
   "cannot define the implicit copy assignment operator for %0, because "
   "non-static %select{reference|const}1 member %2 cannot use copy "
