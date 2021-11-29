@@ -1989,6 +1989,11 @@ Parser::TPResult Parser::TryParseParameterDeclarationClause(
     ParsedAttributes attrs(AttrFactory);
     MaybeParseMicrosoftAttributes(attrs);
 
+    // Try eat a named argument tag
+    if (getLangOpts().CPlusPlus2b)
+      while (Tok.is(tok::string_literal))
+        ConsumeToken();
+
     // decl-specifier-seq
     // A parameter-declaration's initializer must be preceded by an '=', so
     // decl-specifier-seq '{' is not a parameter in C++11.
