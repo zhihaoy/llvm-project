@@ -4427,6 +4427,11 @@ def err_param_default_argument_on_parameter_pack : Error<
   "parameter pack cannot have a default argument">;
 def err_param_namedarg_redefinition : Error<
   "redefinition of named argument %0">;
+def err_param_namedarg_not_pairwise : Error<
+  "%select{positional parameter|parameter pack}0 follows named argument "
+  "declaration">;
+def err_param_namedarg_with_varargs : Error<
+  "named arguments cannot be used together with varargs">;
 def err_param_namedarg_is_parameter_pack : Error<
   "named argument cannot be a parameter pack">;
 def err_uninitialized_member_for_assign : Error<

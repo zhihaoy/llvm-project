@@ -7172,8 +7172,7 @@ void Parser::ParseParameterDeclarationClause(
     AllowImplicitTypename = ImplicitTypenameContext::Yes;
   }
 
-  NamedArgumentContext NamedArgs(Actions);
-  bool ParsingNamedArg = false;
+  NamedArgumentContext NamedArgs(Actions, EllipsisLoc);
 
   do {
     // FIXME: Issue a diagnostic if we parsed an attribute-specifier-seq
@@ -7206,7 +7205,6 @@ void Parser::ParseParameterDeclarationClause(
     if (getLangOpts().CPlusPlus2b && Tok.is(tok::string_literal)) {
       if (auto *Name = cast_or_null<StringLiteral>(
               ParseStringLiteralExpression(false).get())) {
-        ParsingNamedArg = true;
         NamedArgs.enterKey(Name);
         DeclResult ImpliedParam =
             Actions.ActOnCXXNamedArgSpecifier(getCurScope(), Name);
@@ -7303,10 +7301,8 @@ void Parser::ParseParameterDeclarationClause(
       // Inform the actions module about the parameter declarator, so it gets
       // added to the current scope.
       Decl *Param = Actions.ActOnParamDeclarator(getCurScope(), ParmDeclarator);
-      if (ParsingNamedArg) {
+      if (NamedArgs)
         NamedArgs.enterValue(ParmDeclarator, Param);
-        ParsingNamedArg = false;
-      }
 
       // Parse the default argument, if any. We parse the default
       // arguments in all dialects; the semantic analysis in

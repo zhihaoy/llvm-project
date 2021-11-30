@@ -22,17 +22,24 @@ namespace clang {
 class Decl;
 class Declarator;
 class Sema;
+class SourceLocation;
 class StringLiteral;
 
 class NamedArgumentContext {
   llvm::SmallDenseMap<StringRef, StringLiteral *, 16> SeenSoFar;
   Sema &S;
+  SourceLocation &EllipsisLoc;
+  StringLiteral const *LastKey = nullptr;
 
 public:
-  explicit NamedArgumentContext(Sema &S) : S(S) {}
+  explicit NamedArgumentContext(Sema &S, SourceLocation &EllipsisLoc)
+      : S(S), EllipsisLoc(EllipsisLoc) {}
 
+  explicit operator bool() const { return !SeenSoFar.empty(); }
   void enterKey(StringLiteral *Tag);
   void enterValue(Declarator &D, Decl *Param);
+
+  ~NamedArgumentContext();
 };
 
 } // namespace clang
