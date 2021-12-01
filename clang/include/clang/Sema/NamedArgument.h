@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 //
-// This file defines semantics to apply while parsing C++ name argument
-// declarations.
+// This file defines semantics to apply while parsing C++ non-positional
+// parameters and named arguments.
 //
 //===----------------------------------------------------------------------===//
 
@@ -25,21 +25,21 @@ class Sema;
 class SourceLocation;
 class StringLiteral;
 
-class NamedArgumentContext {
+class NonpositionalParameterContext {
   llvm::SmallDenseMap<StringRef, StringLiteral *, 16> SeenSoFar;
   Sema &S;
   SourceLocation &EllipsisLoc;
   StringLiteral const *LastKey = nullptr;
 
 public:
-  explicit NamedArgumentContext(Sema &S, SourceLocation &EllipsisLoc)
+  explicit NonpositionalParameterContext(Sema &S, SourceLocation &EllipsisLoc)
       : S(S), EllipsisLoc(EllipsisLoc) {}
 
   explicit operator bool() const { return !SeenSoFar.empty(); }
-  void enterKey(StringLiteral *Tag);
-  void enterValue(Declarator &D, Decl *Param);
+  void enterKey(StringLiteral *Key);
+  void enterParameter(Declarator &D, Decl *Param);
 
-  ~NamedArgumentContext();
+  ~NonpositionalParameterContext();
 };
 
 } // namespace clang

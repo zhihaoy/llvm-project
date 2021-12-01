@@ -1989,7 +1989,7 @@ Parser::TPResult Parser::TryParseParameterDeclarationClause(
     ParsedAttributes attrs(AttrFactory);
     MaybeParseMicrosoftAttributes(attrs);
 
-    // Try eat a named argument tag
+    // Try eat non-positional parameter's key
     if (getLangOpts().CPlusPlus2b)
       while (Tok.is(tok::string_literal))
         ConsumeToken();

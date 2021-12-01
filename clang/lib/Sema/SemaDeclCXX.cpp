@@ -449,10 +449,10 @@ void Sema::CheckExtraCXXDefaultArguments(Declarator &D) {
   }
 }
 
-DeclResult Sema::ActOnCXXNamedArgSpecifier(Scope *S, StringLiteral *Name) {
-  assert(Name->isOrdinary());
-  SourceLocation Loc = Name->getBeginLoc();
-  QualType ImpliedParamTy = BuildStdNameT(Name, Loc);
+DeclResult Sema::ActOnCXXNonpositionalParameter(Scope *S, StringLiteral *Key) {
+  assert(Key->isOrdinary());
+  SourceLocation Loc = Key->getBeginLoc();
+  QualType ImpliedParamTy = BuildStdNameT(Key, Loc);
   if (ImpliedParamTy.isNull())
     return true;
 

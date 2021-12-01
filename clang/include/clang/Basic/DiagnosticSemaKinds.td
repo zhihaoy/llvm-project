@@ -2402,8 +2402,8 @@ def err_implied_std_initializer_list_not_found : Error<
 def err_malformed_std_initializer_list : Error<
   "std::initializer_list must be a class template with a single type parameter">;
 def err_implied_std_named_t_not_found : Error<
-  "cannot emit implied parameter for named argument because std::named_t was "
-  "not found; include <namedarg>">;
+  "cannot emit implied parameter for non-positional parameter "
+  "because std::named_t was not found; include <namedarg>">;
 def err_malformed_std_named_t : Error<
   "std::named_t must be a class template with a single non-type parameter">;
 def err_auto_init_list_from_c : Error<
@@ -4425,15 +4425,15 @@ def err_param_default_argument_member_template_redecl : Error<
   "class in a template}0">;
 def err_param_default_argument_on_parameter_pack : Error<
   "parameter pack cannot have a default argument">;
-def err_param_namedarg_redefinition : Error<
-  "redefinition of named argument %0">;
-def err_param_namedarg_not_pairwise : Error<
-  "%select{positional parameter|parameter pack}0 follows named argument "
-  "declaration">;
-def err_param_namedarg_with_varargs : Error<
-  "named arguments cannot be used together with varargs">;
-def err_param_namedarg_is_parameter_pack : Error<
-  "named argument cannot be a parameter pack">;
+def err_param_nonpositional_redefinition : Error<
+  "redefinition of non-positional parameter %0">;
+def err_param_nonpositional_not_pairwise : Error<
+  "%select{positional parameter|parameter pack}0 follows "
+  "non-positional parameter declaration">;
+def err_param_nonpositional_with_varargs : Error<
+  "non-positional parameter cannot be used together with varargs">;
+def err_param_nonpositional_is_parameter_pack : Error<
+  "non-positional parameter cannot be a parameter pack">;
 def err_uninitialized_member_for_assign : Error<
   "cannot define the implicit copy assignment operator for %0, because "
   "non-static %select{reference|const}1 member %2 cannot use copy "

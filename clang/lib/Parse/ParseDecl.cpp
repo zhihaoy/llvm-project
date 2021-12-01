@@ -7172,7 +7172,7 @@ void Parser::ParseParameterDeclarationClause(
     AllowImplicitTypename = ImplicitTypenameContext::Yes;
   }
 
-  NamedArgumentContext NamedArgs(Actions, EllipsisLoc);
+  NonpositionalParameterContext NposParms(Actions, EllipsisLoc);
 
   do {
     // FIXME: Issue a diagnostic if we parsed an attribute-specifier-seq
@@ -7201,13 +7201,13 @@ void Parser::ParseParameterDeclarationClause(
       MaybeParseMicrosoftAttributes(ArgDeclSpecAttrs);
     }
 
-    // Parse name of a named argument
+    // Parse the key of a non-positional parameter
     if (getLangOpts().CPlusPlus2b && Tok.is(tok::string_literal)) {
-      if (auto *Name = cast_or_null<StringLiteral>(
+      if (auto *Key = cast_or_null<StringLiteral>(
               ParseStringLiteralExpression(false).get())) {
-        NamedArgs.enterKey(Name);
+        NposParms.enterKey(Key);
         DeclResult ImpliedParam =
-            Actions.ActOnCXXNamedArgSpecifier(getCurScope(), Name);
+            Actions.ActOnCXXNonpositionalParameter(getCurScope(), Key);
         if (ImpliedParam.isUsable())
           ParamInfo.emplace_back(nullptr, SourceLocation(), ImpliedParam.get());
       }
@@ -7301,8 +7301,8 @@ void Parser::ParseParameterDeclarationClause(
       // Inform the actions module about the parameter declarator, so it gets
       // added to the current scope.
       Decl *Param = Actions.ActOnParamDeclarator(getCurScope(), ParmDeclarator);
-      if (NamedArgs)
-        NamedArgs.enterValue(ParmDeclarator, Param);
+      if (NposParms)
+        NposParms.enterParameter(ParmDeclarator, Param);
 
       // Parse the default argument, if any. We parse the default
       // arguments in all dialects; the semantic analysis in
