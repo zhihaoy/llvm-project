@@ -3528,7 +3528,7 @@ ExprResult Parser::ParseNamedArgumentDesignator() {
   assert(Tok.is(tok::period) && "Not a named argument!");
   ConsumeToken();
 
-  if (Tok.isNot(tok::identifier)) {
+  if (!Tok.isOneOf(tok::identifier, tok::kw_default)) {
     return Diag(Tok.getLocation(), diag::err_expected_named_argument);
   }
 
