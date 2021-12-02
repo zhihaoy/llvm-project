@@ -11770,8 +11770,10 @@ QualType Sema::BuildStdNameT(Expr *Tag, SourceLocation Loc) {
 
   TemplateArgumentListInfo Args(Loc, Loc);
   Args.addArgument(TemplateArgumentLoc(TemplateArgument(Tag), Tag));
-  return Context.getCanonicalType(
-      CheckTemplateIdType(TemplateName(StdNamedT), Loc, Args));
+  QualType Ty = CheckTemplateIdType(TemplateName(StdNamedT), Loc, Args);
+  if (Ty.isNull())
+    return QualType();
+  return Context.getCanonicalType(Ty);
 }
 
 /// Determine whether a using statement is in a context where it will be
