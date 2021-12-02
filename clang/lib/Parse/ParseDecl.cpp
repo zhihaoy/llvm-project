@@ -7260,6 +7260,8 @@ void Parser::ParseParameterDeclarationClause(
         ParmDeclarator.getNumTypeObjects() == 0) {
       // Completely missing, emit error.
       Diag(DSStart, diag::err_missing_param);
+      if (NposParms)
+        NposParms.invalidateParameter();
     } else {
       // Otherwise, we have something.  Add it and let semantic analysis try
       // to grok it and add the result to the ParamInfo we are building.

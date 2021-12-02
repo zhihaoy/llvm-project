@@ -26,6 +26,7 @@
 #include "clang/Basic/PrettyStackTrace.h"
 #include "clang/Parse/RAIIObjectsForParser.h"
 #include "clang/Sema/DeclSpec.h"
+#include "clang/Sema/NamedArgument.h"
 #include "clang/Sema/ParsedTemplate.h"
 #include "clang/Sema/Scope.h"
 #include "clang/Sema/TypoCorrection.h"
@@ -3433,17 +3434,25 @@ bool Parser::ParseExpressionList(SmallVectorImpl<Expr *> &Exprs,
                                  bool FailImmediatelyOnInvalidExpr,
                                  bool EarlyTypoCorrection) {
   bool SawError = false;
+  NamedArgumentContext NamedArgs(Actions);
+
   while (true) {
     if (ExpressionStarts)
       ExpressionStarts();
 
     if (getLangOpts().CPlusPlus2b && Tok.is(tok::period)) {
-      ExprResult Expr = ParseNamedArgumentDesignator();
+      IdentifierLocPair IdentPair;
+      ExprResult Expr = ParseNamedArgumentDesignator(IdentPair);
       if (Expr.isInvalid()) {
         SkipUntil(tok::comma, tok::r_paren, StopBeforeMatch);
         SawError = true;
+        if (Tok.isNot(tok::comma))
+          break;
+        ConsumeToken();
+        continue;
       } else {
         Exprs.push_back(Expr.get());
+        NamedArgs.enterName(IdentPair.first, IdentPair.second);
       }
     }
 
@@ -3471,11 +3480,15 @@ bool Parser::ParseExpressionList(SmallVectorImpl<Expr *> &Exprs,
     }
     if (Expr.isInvalid()) {
       SawError = true;
+      if (NamedArgs)
+        NamedArgs.invalidateArgument();
       if (FailImmediatelyOnInvalidExpr)
         break;
       SkipUntil(tok::comma, tok::r_paren, StopBeforeMatch);
     } else {
       Exprs.push_back(Expr.get());
+      if (NamedArgs)
+        NamedArgs.enterArgument(Expr.get());
     }
 
     if (Tok.isNot(tok::comma))
@@ -3524,7 +3537,7 @@ bool Parser::ParseSimpleExpressionList(SmallVectorImpl<Expr *> &Exprs) {
   }
 }
 
-ExprResult Parser::ParseNamedArgumentDesignator() {
+ExprResult Parser::ParseNamedArgumentDesignator(IdentifierLocPair &IdentPair) {
   assert(Tok.is(tok::period) && "Not a named argument!");
   ConsumeToken();
 
@@ -3532,8 +3545,9 @@ ExprResult Parser::ParseNamedArgumentDesignator() {
     return Diag(Tok.getLocation(), diag::err_expected_named_argument);
   }
 
-  IdentifierInfo &II = *Tok.getIdentifierInfo();
-  ExprResult DesignatorObj = Actions.ActOnCXXNamedArgument(II, ConsumeToken());
+  IdentPair = {Tok.getIdentifierInfo(), ConsumeToken()};
+  ExprResult DesignatorObj =
+      Actions.ActOnCXXNamedArgument(*IdentPair.first, IdentPair.second);
 
   if (Tok.isNot(tok::equal)) {
     return Diag(Tok.getLocation(),

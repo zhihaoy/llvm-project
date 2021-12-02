@@ -21,15 +21,16 @@ namespace clang {
 
 class Decl;
 class Declarator;
+class Expr;
+class IdentifierInfo;
 class Sema;
-class SourceLocation;
 class StringLiteral;
 
 class NonpositionalParameterContext {
   llvm::SmallDenseMap<StringRef, StringLiteral *, 16> SeenSoFar;
   Sema &S;
   SourceLocation &EllipsisLoc;
-  StringLiteral const *LastKey = nullptr;
+  decltype(SeenSoFar)::iterator Last = SeenSoFar.end();
 
 public:
   explicit NonpositionalParameterContext(Sema &S, SourceLocation &EllipsisLoc)
@@ -38,8 +39,23 @@ public:
   explicit operator bool() const { return !SeenSoFar.empty(); }
   void enterKey(StringLiteral *Key);
   void enterParameter(Declarator &D, Decl *Param);
+  void invalidateParameter();
 
   ~NonpositionalParameterContext();
+};
+
+class NamedArgumentContext {
+  llvm::SmallDenseMap<IdentifierInfo *, Expr *, 8> SeenSoFar;
+  Sema &S;
+  decltype(SeenSoFar)::iterator Last = SeenSoFar.end();
+
+public:
+  explicit NamedArgumentContext(Sema &S) : S(S) {}
+
+  explicit operator bool() const { return !SeenSoFar.empty(); }
+  void enterName(IdentifierInfo *Name, SourceLocation Loc);
+  void enterArgument(Expr *InitClause);
+  void invalidateArgument();
 };
 
 } // namespace clang

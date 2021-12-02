@@ -225,6 +225,16 @@ def ext_designated_init_brace_elision : ExtWarn<
   "brace elision for designated initializer is a C99 extension">,
   InGroup<C99Designator>, SFINAEFailure;
 
+// Named arguments
+def err_namedarg_duplicate : Error<
+  "passing duplicated named arguments">;
+def note_previous_namedarg_init : Note<
+  "previous initialization for named argument %0 is here">;
+def err_namedarg_not_pairwise : Error<
+  "%select{positional argument|pack expansion}0 follows named argument">;
+def err_namedarg_is_pack_expansion : Error<
+  "pack expansion for initialization of a named argument">;
+
 // Declarations.
 def ext_plain_complex : ExtWarn<
   "plain '_Complex' requires a type specifier; assuming '_Complex double'">;
