@@ -625,6 +625,99 @@ static double GetApproxValue(const llvm::APFloat &F) {
   return V.convertToDouble();
 }
 
+static bool TryPrintAsStringLiteral(raw_ostream &Out, const ArrayType *ATy,
+                                    const APValue *Data, size_t Size) {
+  if (Size == 0)
+    return false;
+
+  QualType Ty = ATy->getElementType();
+  if (!Ty->isAnyCharacterType())
+    return false;
+
+  // Nothing we can do about a sequence that is not null-terminated
+  if (!Data[--Size].getInt().isZero())
+    return false;
+
+  constexpr size_t MaxN = 36;
+  char Buf[MaxN * 2 + 3] = {'"'}; // "At most 36 escaped chars" + \0
+  auto *pBuf = Buf + 1;
+
+  // Better than printing a two-digit sequence of 10 integers.
+  StringRef Ellipsis;
+  if (Size > MaxN) {
+    Ellipsis = "[...]";
+    auto Room = Ellipsis.size() / 2; // May step on the last \0
+    Size = std::min(MaxN - Room, Size);
+  }
+
+  auto writeEscape = [](char *Ptr, char Ch) {
+    Ptr[0] = '\\';
+    Ptr[1] = Ch;
+    return Ptr + 2;
+  };
+
+  for (auto &Val : ArrayRef<const APValue>(Data, Size)) {
+    auto Char64 = Val.getInt().getExtValue();
+    if (Char64 > 0x7f)
+      return false; // Bye bye, see you in integers.
+    switch (auto Ch = static_cast<unsigned char>(Char64)) {
+    default:
+      if (isPrintable(Ch)) {
+        *pBuf++ = Ch;
+        break;
+      }
+      return false;
+    case '\\':
+    case '\'': // The diagnostic message is 'quoted'
+    case '"':
+      pBuf = writeEscape(pBuf, Ch);
+      break;
+    case '\0':
+      pBuf = writeEscape(pBuf, '0');
+      break;
+    case '\a':
+      pBuf = writeEscape(pBuf, 'a');
+      break;
+    case '\b':
+      pBuf = writeEscape(pBuf, 'b');
+      break;
+    case '\f':
+      pBuf = writeEscape(pBuf, 'f');
+      break;
+    case '\n':
+      pBuf = writeEscape(pBuf, 'n');
+      break;
+    case '\r':
+      pBuf = writeEscape(pBuf, 'r');
+      break;
+    case '\t':
+      pBuf = writeEscape(pBuf, 't');
+      break;
+    case '\v':
+      pBuf = writeEscape(pBuf, 'v');
+      break;
+    }
+  }
+
+  if (!Ellipsis.empty()) {
+    memcpy(pBuf, Ellipsis.data(), Ellipsis.size());
+    pBuf += Ellipsis.size();
+  }
+  *pBuf++ = '"';
+
+  if (Ty->isWideCharType())
+    Out << 'L';
+  else if (Ty->isChar8Type())
+    Out << "u8";
+  else if (Ty->isChar16Type())
+    Out << 'u';
+  else if (Ty->isChar32Type())
+    Out << 'U';
+
+  Out << StringRef(Buf, pBuf - Buf);
+  return true;
+}
+
 void APValue::printPretty(raw_ostream &Out, const ASTContext &Ctx,
                           QualType Ty) const {
   printPretty(Out, Ctx.getPrintingPolicy(), Ty, &Ctx);
@@ -795,17 +888,24 @@ void APValue::printPretty(raw_ostream &Out, const PrintingPolicy &Policy,
   }
   case APValue::Array: {
     const ArrayType *AT = Ty->castAsArrayTypeUnsafe();
+    unsigned N = getArrayInitializedElts();
+    if (N != 0 &&
+        TryPrintAsStringLiteral(Out, AT, &getArrayInitializedElt(0), N))
+      return;
     QualType ElemTy = AT->getElementType();
     Out << '{';
-    if (unsigned N = getArrayInitializedElts()) {
-      getArrayInitializedElt(0).printPretty(Out, Policy, ElemTy, Ctx);
-      for (unsigned I = 1; I != N; ++I) {
+    unsigned I = 0;
+    switch (N) {
+    case 0:
+      for (; I != N; ++I) {
         Out << ", ";
         if (I == 10) {
           // Avoid printing out the entire contents of large arrays.
-          Out << "...";
-          break;
+          Out << "...}";
+          return;
         }
+        LLVM_FALLTHROUGH;
+      default:
         getArrayInitializedElt(I).printPretty(Out, Policy, ElemTy, Ctx);
       }
     }
