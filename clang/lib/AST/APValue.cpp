@@ -649,51 +649,19 @@ static bool TryPrintAsStringLiteral(raw_ostream &Out, const ArrayType *ATy,
     Size = std::min(MaxN - Ellipsis.size() / 2, Size);
   }
 
-  auto writeEscape = [&Buf](char Ch) {
-    Buf.push_back('\\');
-    Buf.push_back(Ch);
-  };
-
   for (auto &Val : ArrayRef<const APValue>(Data, Size)) {
     auto Char64 = Val.getInt().getExtValue();
     if (!isASCII(Char64))
       return false; // Bye bye, see you in integers.
-    switch (auto Ch = static_cast<unsigned char>(Char64)) {
-    default:
-      if (isPrintable(Ch)) {
-        Buf.emplace_back(Ch);
-        break;
-      }
-      return false;
-    case '\\':
-    case '\'': // The diagnostic message is 'quoted'
-    case '"':
-      writeEscape(Ch);
-      break;
-    case '\0':
-      writeEscape('0');
-      break;
-    case '\a':
-      writeEscape('a');
-      break;
-    case '\b':
-      writeEscape('b');
-      break;
-    case '\f':
-      writeEscape('f');
-      break;
-    case '\n':
-      writeEscape('n');
-      break;
-    case '\r':
-      writeEscape('r');
-      break;
-    case '\t':
-      writeEscape('t');
-      break;
-    case '\v':
-      writeEscape('v');
-      break;
+    auto Ch = static_cast<unsigned char>(Char64);
+    // The diagnostic message is 'quoted'
+    auto Escaped = escapeCStyle<EscapeChar::SingleAndDouble>(Ch);
+    if (Escaped.empty()) {
+      if (!isPrintable(Ch))
+        return false;
+      Buf.emplace_back(Ch);
+    } else {
+      Buf.append(Escaped);
     }
   }
 

@@ -34,7 +34,7 @@ void narrow() {
   new ASCII<"OVER THE LAZY DOG 0123456789">;
   // CHECK{LITERAL}: ASCII<{"\\`~!@#$%^&*()_+-={}[]|\'\";:,.<>?/"}>
   new ASCII<R"(\`~!@#$%^&*()_+-={}[]|'";:,.<>?/)">;
-  // CHECK{LITERAL}: ASCII<{"escape\0"}>
+  // CHECK{LITERAL}: ASCII<{{101, 115, 99, 97, 112, 101, 0, 0}}>
   new ASCII<"escape\0">;
   // CHECK{LITERAL}: ASCII<{"escape\r\n"}>
   new ASCII<"escape\r\n">;
@@ -54,8 +54,8 @@ void narrow() {
   new ASCII<"print even more characters as string">;
   // CHECK{LITERAL}: ASCII<{"print many characters no more than[...]"}>
   new ASCII<"print many characters no more than a limit">;
-  // CHECK{LITERAL}: ASCII<{"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"}>
-  new ASCII<"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0">;
+  // CHECK{LITERAL}: ASCII<{"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r"}>
+  new ASCII<"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r">;
   // CHECK{LITERAL}: ASCII<{"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[...]"}>
   new ASCII<"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n">;
 }
@@ -69,7 +69,7 @@ void wide() {
   new ASCII<L"OVER THE LAZY DOG 0123456789">;
   // CHECK{LITERAL}: ASCII<{L"\\`~!@#$%^&*()_+-={}[]|\'\";:,.<>?/"}>
   new ASCII<LR"(\`~!@#$%^&*()_+-={}[]|'";:,.<>?/)">;
-  // CHECK{LITERAL}: ASCII<{L"escape\0"}>
+  // CHECK{LITERAL}: ASCII<{{101, 115, 99, 97, 112, 101, 0, 0}}>
   new ASCII<L"escape\0">;
   // CHECK{LITERAL}: ASCII<{L"escape\r\n"}>
   new ASCII<L"escape\r\n">;
@@ -89,8 +89,8 @@ void wide() {
   new ASCII<L"print even more characters as string">;
   // CHECK{LITERAL}: ASCII<{L"print many characters no more than[...]"}>
   new ASCII<L"print many characters no more than a limit">;
-  // CHECK{LITERAL}: ASCII<{L"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0"}>
-  new ASCII<L"\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0\0">;
+  // CHECK{LITERAL}: ASCII<{L"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r"}>
+  new ASCII<L"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r">;
   // CHECK{LITERAL}: ASCII<{L"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[...]"}>
   new ASCII<L"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n">;
 }
@@ -100,7 +100,7 @@ void utf8() {
   new ASCII<u8"">;
   // CHECK{LITERAL}: ASCII<{u8"\\`~!@#$%^&*()_+-={}[]|\'\";:,.<>?/"}>
   new ASCII<u8R"(\`~!@#$%^&*()_+-={}[]|'";:,.<>?/)">;
-  // CHECK{LITERAL}: ASCII<{u8"escape\0"}>
+  // CHECK{LITERAL}: ASCII<{{101, 115, 99, 97, 112, 101, 0, 0}}>
   new ASCII<u8"escape\0">;
   // CHECK{LITERAL}: ASCII<{u8"escape\r\n"}>
   new ASCII<u8"escape\r\n">;
@@ -115,7 +115,7 @@ void utf16() {
   new ASCII<u"">;
   // CHECK{LITERAL}: ASCII<{u"\\`~!@#$%^&*()_+-={}[]|\'\";:,.<>?/"}>
   new ASCII<uR"(\`~!@#$%^&*()_+-={}[]|'";:,.<>?/)">;
-  // CHECK{LITERAL}: ASCII<{u"escape\0"}>
+  // CHECK{LITERAL}: ASCII<{{101, 115, 99, 97, 112, 101, 0, 0}}>
   new ASCII<u"escape\0">;
   // CHECK{LITERAL}: ASCII<{u"escape\r\n"}>
   new ASCII<u"escape\r\n">;
@@ -130,7 +130,7 @@ void utf32() {
   new ASCII<U"">;
   // CHECK{LITERAL}: ASCII<{U"\\`~!@#$%^&*()_+-={}[]|\'\";:,.<>?/"}>
   new ASCII<UR"(\`~!@#$%^&*()_+-={}[]|'";:,.<>?/)">;
-  // CHECK{LITERAL}: ASCII<{U"escape\0"}>
+  // CHECK{LITERAL}: ASCII<{{101, 115, 99, 97, 112, 101, 0, 0}}>
   new ASCII<U"escape\0">;
   // CHECK{LITERAL}: ASCII<{U"escape\r\n"}>
   new ASCII<U"escape\r\n">;
