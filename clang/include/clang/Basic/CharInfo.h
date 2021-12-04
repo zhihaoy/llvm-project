@@ -163,6 +163,44 @@ LLVM_READONLY inline bool isRawStringDelimBody(unsigned char c) {
                           CHAR_DIGIT|CHAR_UNDER|CHAR_RAWDEL)) != 0;
 }
 
+enum class EscapeChar {
+  Single = 1,
+  Double = 2,
+  SingleAndDouble = static_cast<int>(Single) | static_cast<int>(Double),
+};
+
+/// Return C-style escaped string for special characters, or an empty string if
+/// there is no such mapping.
+template <EscapeChar Opt, class CharT>
+LLVM_READONLY inline auto escapeCStyle(CharT Ch) -> StringRef {
+  switch (Ch) {
+  case '\\':
+    return "\\\\";
+  case '\'':
+    if ((static_cast<int>(Opt) & static_cast<int>(EscapeChar::Single)) == 0)
+      break;
+    return "\\'";
+  case '"':
+    if ((static_cast<int>(Opt) & static_cast<int>(EscapeChar::Double)) == 0)
+      break;
+    return "\\\"";
+  case '\a':
+    return "\\a";
+  case '\b':
+    return "\\b";
+  case '\f':
+    return "\\f";
+  case '\n':
+    return "\\n";
+  case '\r':
+    return "\\r";
+  case '\t':
+    return "\\t";
+  case '\v':
+    return "\\v";
+  }
+  return {};
+}
 
 /// Converts the given ASCII character to its lowercase equivalent.
 ///
