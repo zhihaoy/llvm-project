@@ -625,8 +625,10 @@ static double GetApproxValue(const llvm::APFloat &F) {
   return V.convertToDouble();
 }
 
-static bool TryPrintAsStringLiteral(raw_ostream &Out, const ArrayType *ATy,
-                                    const APValue *Data, size_t Size) {
+static bool TryPrintAsStringLiteral(raw_ostream &Out,
+                                    const PrintingPolicy &Policy,
+                                    const ArrayType *ATy, const APValue *Data,
+                                    size_t Size) {
   if (Size == 0)
     return false;
 
@@ -638,13 +640,13 @@ static bool TryPrintAsStringLiteral(raw_ostream &Out, const ArrayType *ATy,
   if (!Data[--Size].getInt().isZero())
     return false;
 
-  constexpr size_t MaxN = 36;
   llvm::SmallString<40> Buf;
   Buf.push_back('"');
 
   // Better than printing a two-digit sequence of 10 integers.
+  constexpr size_t MaxN = 36;
   StringRef Ellipsis;
-  if (Size > MaxN) {
+  if (Size > MaxN && !Policy.EntireContentsOfLargeArray) {
     Ellipsis = "[...]";
     Size = std::min(MaxN - Ellipsis.size() / 2, Size);
   }
@@ -853,7 +855,7 @@ void APValue::printPretty(raw_ostream &Out, const PrintingPolicy &Policy,
     const ArrayType *AT = Ty->castAsArrayTypeUnsafe();
     unsigned N = getArrayInitializedElts();
     if (N != 0 &&
-        TryPrintAsStringLiteral(Out, AT, &getArrayInitializedElt(0), N))
+        TryPrintAsStringLiteral(Out, Policy, AT, &getArrayInitializedElt(0), N))
       return;
     QualType ElemTy = AT->getElementType();
     Out << '{';
@@ -862,8 +864,7 @@ void APValue::printPretty(raw_ostream &Out, const PrintingPolicy &Policy,
     case 0:
       for (; I != N; ++I) {
         Out << ", ";
-        if (I == 10) {
-          // Avoid printing out the entire contents of large arrays.
+        if (I == 10 && !Policy.EntireContentsOfLargeArray) {
           Out << "...}";
           return;
         }
