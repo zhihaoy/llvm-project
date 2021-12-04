@@ -639,71 +639,66 @@ static bool TryPrintAsStringLiteral(raw_ostream &Out, const ArrayType *ATy,
     return false;
 
   constexpr size_t MaxN = 36;
-  char Buf[MaxN * 2 + 3] = {'"'}; // "At most 36 escaped chars" + \0
-  auto *pBuf = Buf + 1;
+  llvm::SmallString<40> Buf;
+  Buf.push_back('"');
 
   // Better than printing a two-digit sequence of 10 integers.
   StringRef Ellipsis;
   if (Size > MaxN) {
     Ellipsis = "[...]";
-    auto Room = Ellipsis.size() / 2; // May step on the last \0
-    Size = std::min(MaxN - Room, Size);
+    Size = std::min(MaxN - Ellipsis.size() / 2, Size);
   }
 
-  auto writeEscape = [](char *Ptr, char Ch) {
-    Ptr[0] = '\\';
-    Ptr[1] = Ch;
-    return Ptr + 2;
+  auto writeEscape = [&Buf](char Ch) {
+    Buf.push_back('\\');
+    Buf.push_back(Ch);
   };
 
   for (auto &Val : ArrayRef<const APValue>(Data, Size)) {
     auto Char64 = Val.getInt().getExtValue();
-    if (Char64 > 0x7f)
+    if (!isASCII(Char64))
       return false; // Bye bye, see you in integers.
     switch (auto Ch = static_cast<unsigned char>(Char64)) {
     default:
       if (isPrintable(Ch)) {
-        *pBuf++ = Ch;
+        Buf.emplace_back(Ch);
         break;
       }
       return false;
     case '\\':
     case '\'': // The diagnostic message is 'quoted'
     case '"':
-      pBuf = writeEscape(pBuf, Ch);
+      writeEscape(Ch);
       break;
     case '\0':
-      pBuf = writeEscape(pBuf, '0');
+      writeEscape('0');
       break;
     case '\a':
-      pBuf = writeEscape(pBuf, 'a');
+      writeEscape('a');
       break;
     case '\b':
-      pBuf = writeEscape(pBuf, 'b');
+      writeEscape('b');
       break;
     case '\f':
-      pBuf = writeEscape(pBuf, 'f');
+      writeEscape('f');
       break;
     case '\n':
-      pBuf = writeEscape(pBuf, 'n');
+      writeEscape('n');
       break;
     case '\r':
-      pBuf = writeEscape(pBuf, 'r');
+      writeEscape('r');
       break;
     case '\t':
-      pBuf = writeEscape(pBuf, 't');
+      writeEscape('t');
       break;
     case '\v':
-      pBuf = writeEscape(pBuf, 'v');
+      writeEscape('v');
       break;
     }
   }
 
-  if (!Ellipsis.empty()) {
-    memcpy(pBuf, Ellipsis.data(), Ellipsis.size());
-    pBuf += Ellipsis.size();
-  }
-  *pBuf++ = '"';
+  Buf.append(Ellipsis);
+  Buf.push_back('"');
 
   if (Ty->isWideCharType())
     Out << 'L';
@@ -714,7 +709,7 @@ static bool TryPrintAsStringLiteral(raw_ostream &Out, const ArrayType *ATy,
   else if (Ty->isChar32Type())
     Out << 'U';
 
-  Out << StringRef(Buf, pBuf - Buf);
+  Out << Buf;
   return true;
 }
 
