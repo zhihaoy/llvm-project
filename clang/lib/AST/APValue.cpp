@@ -627,9 +627,9 @@ static double GetApproxValue(const llvm::APFloat &F) {
 
 static bool TryPrintAsStringLiteral(raw_ostream &Out,
                                     const PrintingPolicy &Policy,
-                                    const ArrayType *ATy, const APValue *Data,
-                                    size_t Size) {
-  if (Size == 0)
+                                    const ArrayType *ATy,
+                                    ArrayRef<APValue> Inits) {
+  if (Inits.empty())
     return false;
 
   QualType Ty = ATy->getElementType();
@@ -637,8 +637,10 @@ static bool TryPrintAsStringLiteral(raw_ostream &Out,
     return false;
 
   // Nothing we can do about a sequence that is not null-terminated
-  if (!Data[--Size].getInt().isZero())
+  if (!Inits.back().getInt().isZero())
     return false;
+  else
+    Inits = Inits.drop_back();
 
   llvm::SmallString<40> Buf;
   Buf.push_back('"');
@@ -646,12 +648,13 @@ static bool TryPrintAsStringLiteral(raw_ostream &Out,
   // Better than printing a two-digit sequence of 10 integers.
   constexpr size_t MaxN = 36;
   StringRef Ellipsis;
-  if (Size > MaxN && !Policy.EntireContentsOfLargeArray) {
+  if (Inits.size() > MaxN && !Policy.EntireContentsOfLargeArray) {
     Ellipsis = "[...]";
-    Size = std::min(MaxN - Ellipsis.size() / 2, Size);
+    Inits =
+        Inits.take_front(std::min(MaxN - Ellipsis.size() / 2, Inits.size()));
   }
 
-  for (auto &Val : ArrayRef<const APValue>(Data, Size)) {
+  for (auto &Val : Inits) {
     auto Char64 = Val.getInt().getExtValue();
     if (!isASCII(Char64))
       return false; // Bye bye, see you in integers.
@@ -854,8 +857,8 @@ void APValue::printPretty(raw_ostream &Out, const PrintingPolicy &Policy,
   case APValue::Array: {
     const ArrayType *AT = Ty->castAsArrayTypeUnsafe();
     unsigned N = getArrayInitializedElts();
-    if (N != 0 &&
-        TryPrintAsStringLiteral(Out, Policy, AT, &getArrayInitializedElt(0), N))
+    if (N != 0 && TryPrintAsStringLiteral(Out, Policy, AT,
+                                          {&getArrayInitializedElt(0), N}))
       return;
     QualType ElemTy = AT->getElementType();
     Out << '{';
