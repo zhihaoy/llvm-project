@@ -47,7 +47,7 @@ LLVM_READNONE inline bool isASCII(unsigned char c) { return c <= 127; }
 
 /// Returns true if a codepoint is an ASCII character.
 LLVM_READNONE inline bool isASCII(uint32_t c) { return c <= 127; }
-LLVM_READNONE inline bool isASCII(int64_t c) { return c <= 127; }
+LLVM_READNONE inline bool isASCII(int64_t c) { return 0 <= c && c <= 127; }
 
 /// Returns true if this is a valid first character of a C identifier,
 /// which is [a-zA-Z_].
