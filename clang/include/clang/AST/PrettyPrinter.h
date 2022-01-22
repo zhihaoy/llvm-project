@@ -74,7 +74,7 @@ struct PrintingPolicy {
         SuppressImplicitBase(false), FullyQualifiedName(false),
         PrintCanonicalTypes(false), PrintInjectedClassNameWithArguments(true),
         UsePreferredNames(true), AlwaysIncludeTypeForTemplateArgument(false),
-        CleanUglifiedParameters(false), EntireContentsOfLargeArray(false) {}
+        CleanUglifiedParameters(false), EntireContentsOfLargeArray(true) {}
 
   /// Adjust this printing policy for cases where it's known that we're
   /// printing C++ code (for instance, if AST dumping reaches a C++-only

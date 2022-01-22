@@ -46,18 +46,12 @@ void narrow() {
   new ASCII<"not\x11">;
   // CHECK{LITERAL}: ASCII<{{18, 20, 127, 16, 1, 32, 97, 98, 99, 0}}>
   new ASCII<"\x12\x14\x7f\x10\x01 abc">;
-  // CHECK{LITERAL}: ASCII<{{18, 20, 127, 16, 1, 32, 97, 98, 99, 100, ...}}>
+  // CHECK{LITERAL}: ASCII<{{18, 20, 127, 16, 1, 32, 97, 98, 99, 100, 0}}>
   new ASCII<"\x12\x14\x7f\x10\x01 abcd">;
   // CHECK{LITERAL}: ASCII<{"print more characters as string"}>
   new ASCII<"print more characters as string">;
-  // CHECK{LITERAL}: ASCII<{"print even more characters as string"}>
-  new ASCII<"print even more characters as string">;
-  // CHECK{LITERAL}: ASCII<{"print many characters no more than[...]"}>
-  new ASCII<"print many characters no more than a limit">;
-  // CHECK{LITERAL}: ASCII<{"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r"}>
-  new ASCII<"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r">;
-  // CHECK{LITERAL}: ASCII<{"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[...]"}>
-  new ASCII<"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n">;
+  // CHECK{LITERAL}: ASCII<{"print more characters as string, no uplimit"}>
+  new ASCII<"print more characters as string, no uplimit">;
 }
 
 void wide() {
@@ -81,18 +75,12 @@ void wide() {
   new ASCII<L"not\x11">;
   // CHECK{LITERAL}: ASCII<{{18, 20, 255, 22909, 136, 32, 97, 98, 99, 0}}>
   new ASCII<L"\x12\x14\xff\x597d\x88 abc">;
-  // CHECK{LITERAL}: ASCII<{{18, 20, 255, 22909, 136, 32, 97, 98, 99, 100, ...}}>
+  // CHECK{LITERAL}: ASCII<{{18, 20, 255, 22909, 136, 32, 97, 98, 99, 100, 0}}>
   new ASCII<L"\x12\x14\xff\x597d\x88 abcd">;
   // CHECK{LITERAL}: ASCII<{L"print more characters as string"}>
   new ASCII<L"print more characters as string">;
-  // CHECK{LITERAL}: ASCII<{L"print even more characters as string"}>
-  new ASCII<L"print even more characters as string">;
-  // CHECK{LITERAL}: ASCII<{L"print many characters no more than[...]"}>
-  new ASCII<L"print many characters no more than a limit">;
-  // CHECK{LITERAL}: ASCII<{L"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r"}>
-  new ASCII<L"\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r\r">;
-  // CHECK{LITERAL}: ASCII<{L"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n[...]"}>
-  new ASCII<L"\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n">;
+  // CHECK{LITERAL}: ASCII<{L"print more characters as string, no uplimit"}>
+  new ASCII<L"print more characters as string, no uplimit">;
 }
 
 void utf8() {
@@ -106,8 +94,8 @@ void utf8() {
   new ASCII<u8"escape\r\n">;
   // CHECK{LITERAL}: ASCII<{{229, 165, 189, 239, 191, 189, 0}}>
   new ASCII<u8"\u597d\ufffd">;
-  // CHECK{LITERAL}: ASCII<{u8"print many characters no more than[...]"}>
-  new ASCII<u8"print many characters no more than a limit">;
+  // CHECK{LITERAL}: ASCII<{u8"print more characters as string, no uplimit"}>
+  new ASCII<u8"print more characters as string, no uplimit">;
 }
 
 void utf16() {
@@ -121,8 +109,8 @@ void utf16() {
   new ASCII<u"escape\r\n">;
   // CHECK{LITERAL}: ASCII<{{22909, 65533, 0}}>
   new ASCII<u"\u597d\ufffd">;
-  // CHECK{LITERAL}: ASCII<{u"print many characters no more than[...]"}>
-  new ASCII<u"print many characters no more than a limit">;
+  // CHECK{LITERAL}: ASCII<{u"print more characters as string, no uplimit"}>
+  new ASCII<u"print more characters as string, no uplimit">;
 }
 
 void utf32() {
@@ -136,6 +124,6 @@ void utf32() {
   new ASCII<U"escape\r\n">;
   // CHECK{LITERAL}: ASCII<{{22909, 131358, 0}}>
   new ASCII<U"\u597d\U0002011E">;
-  // CHECK{LITERAL}: ASCII<{U"print many characters no more than[...]"}>
-  new ASCII<U"print many characters no more than a limit">;
+  // CHECK{LITERAL}: ASCII<{U"print more characters as string, no uplimit"}>
+  new ASCII<U"print more characters as string, no uplimit">;
 }
