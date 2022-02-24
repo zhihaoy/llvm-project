@@ -1984,12 +1984,10 @@ Sema::BuildCXXNew(SourceRange Range, bool UseGlobal,
     initStyle = CXXNewExpr::NoInit;
   }
 
-  Expr **Inits = &Initializer;
-  unsigned NumInits = Initializer ? 1 : 0;
+  MultiExprArg Exprs(&Initializer, Initializer ? 1 : 0);
   if (ParenListExpr *List = dyn_cast_or_null<ParenListExpr>(Initializer)) {
     assert(initStyle == CXXNewExpr::CallInit && "paren init for non-call init");
-    Inits = List->getExprs();
-    NumInits = List->getNumExprs();
+    Exprs = MultiExprArg(List->getExprs(), List->getNumExprs());
   }
 
   // C++11 [expr.new]p15:
@@ -2025,21 +2023,21 @@ Sema::BuildCXXNew(SourceRange Range, bool UseGlobal,
     InitializedEntity Entity
       = InitializedEntity::InitializeNew(StartLoc, AllocType);
     AllocType = DeduceTemplateSpecializationFromInitializer(
-        AllocTypeInfo, Entity, Kind, MultiExprArg(Inits, NumInits));
+        AllocTypeInfo, Entity, Kind, Exprs);
     if (AllocType.isNull())
       return ExprError();
   } else if (Deduced) {
+    MultiExprArg Inits = Exprs;
     bool Braced = (initStyle == CXXNewExpr::ListInit);
     if (Braced) {
-      auto *ILE = cast<InitListExpr>(Inits[0]);
-      Inits = ILE->getInits();
-      NumInits = ILE->getNumInits();
+      auto *ILE = cast<InitListExpr>(Exprs[0]);
+      Inits = MultiExprArg(ILE->getInits(), ILE->getNumInits());
     }
 
-    if (initStyle == CXXNewExpr::NoInit || NumInits == 0)
+    if (initStyle == CXXNewExpr::NoInit || Inits.empty())
       return ExprError(Diag(StartLoc, diag::err_auto_new_requires_ctor_arg)
                        << AllocType << TypeRange);
-    if (NumInits > 1) {
+    if (Inits.size() > 1) {
       Expr *FirstBad = Inits[1];
       return ExprError(Diag(FirstBad->getBeginLoc(),
                             diag::err_auto_new_ctor_multiple_expressions)
@@ -2353,8 +2351,8 @@ Sema::BuildCXXNew(SourceRange Range, bool UseGlobal,
   // Initializer lists are also allowed, in C++11. Rely on the parser for the
   // dialect distinction.
   if (ArraySize && !isLegalArrayNewInitializer(initStyle, Initializer)) {
-    SourceRange InitRange(Inits[0]->getBeginLoc(),
-                          Inits[NumInits - 1]->getEndLoc());
+    SourceRange InitRange(Exprs.front()->getBeginLoc(),
+                          Exprs.back()->getEndLoc());
     Diag(StartLoc, diag::err_new_array_init_args) << InitRange;
     return ExprError();
   }
@@ -2362,8 +2360,7 @@ Sema::BuildCXXNew(SourceRange Range, bool UseGlobal,
   // If we can perform the initialization, and we've not already done so,
   // do it now.
   if (!AllocType->isDependentType() &&
-      !Expr::hasAnyTypeDependentArguments(
-          llvm::makeArrayRef(Inits, NumInits))) {
+      !Expr::hasAnyTypeDependentArguments(Exprs)) {
     // The type we initialize is the complete type, including the array bound.
     QualType InitType;
     if (KnownArraySize)
@@ -2380,10 +2377,8 @@ Sema::BuildCXXNew(SourceRange Range, bool UseGlobal,
 
     InitializedEntity Entity
       = InitializedEntity::InitializeNew(StartLoc, InitType);
-    InitializationSequence InitSeq(*this, Entity, Kind,
-                                   MultiExprArg(Inits, NumInits));
-    ExprResult FullInit = InitSeq.Perform(*this, Entity, Kind,
-                                          MultiExprArg(Inits, NumInits));
+    InitializationSequence InitSeq(*this, Entity, Kind, Exprs);
+    ExprResult FullInit = InitSeq.Perform(*this, Entity, Kind, Exprs);
     if (FullInit.isInvalid())
       return ExprError();
 
