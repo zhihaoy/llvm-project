@@ -1,4 +1,4 @@
-// RUN: %clang_cc1 -std=c++2b -verify %s
+// RUN: %clang_cc1 -std=c++2b -Wno-decltype-auto-cast -verify %s
 
 template <class T>
 void foo(T);
@@ -36,4 +36,27 @@ void diagnostics() {
   foo(auto{1, 2});   // expected-error {{initializer for functional-style cast to 'auto' contains multiple expressions}}
   foo(auto({1, 2})); // expected-error {{cannot deduce actual type for 'auto' from parenthesized initializer list}}
   foo(auto{{1, 2}}); // expected-error {{cannot deduce actual type for 'auto' from nested initializer list}}
+}
+
+void diagnostics_extension() {
+  foo(decltype(auto)());   // expected-error {{initializer for functional-style cast to 'decltype(auto)' is empty}}
+  foo(decltype(auto){});   // expected-error {{initializer for functional-style cast to 'decltype(auto)' is empty}}
+  foo(decltype(auto)({})); // expected-error {{cannot deduce actual type for 'decltype(auto)' from parenthesized initializer list}}
+  foo(decltype(auto){{}}); // expected-error {{cannot deduce actual type for 'decltype(auto)' from nested initializer list}}
+
+  foo(decltype(auto)({a})); // expected-error {{cannot deduce actual type for 'decltype(auto)' from parenthesized initializer list}}
+  foo(decltype(auto){{a}}); // expected-error {{cannot deduce actual type for 'decltype(auto)' from nested initializer list}}
+
+  foo(decltype(auto)(&A::g)); // expected-error {{reference to overloaded function could not be resolved}}
+
+  foo(decltype(auto)(a, 3.14));     // expected-error {{initializer for functional-style cast to 'decltype(auto)' contains multiple expressions}}
+  foo(decltype(auto){a, 3.14});     // expected-error {{initializer for functional-style cast to 'decltype(auto)' contains multiple expressions}}
+  foo(decltype(auto)({a, 3.14}));   // expected-error {{cannot deduce actual type for 'decltype(auto)' from parenthesized initializer list}}
+  foo(decltype(auto){{a, 3.14}});   // expected-error {{cannot deduce actual type for 'decltype(auto)' from nested initializer list}}
+  foo(decltype(auto)({a}, {3.14})); // expected-error {{initializer for functional-style cast to 'decltype(auto)' contains multiple expressions}}
+  foo(decltype(auto){{a}, {3.14}}); // expected-error {{initializer for functional-style cast to 'decltype(auto)' contains multiple expressions}}
+
+  foo(decltype(auto){1, 2});   // expected-error {{initializer for functional-style cast to 'decltype(auto)' contains multiple expressions}}
+  foo(decltype(auto)({1, 2})); // expected-error {{cannot deduce actual type for 'decltype(auto)' from parenthesized initializer list}}
+  foo(decltype(auto){{1, 2}}); // expected-error {{cannot deduce actual type for 'decltype(auto)' from nested initializer list}}
 }

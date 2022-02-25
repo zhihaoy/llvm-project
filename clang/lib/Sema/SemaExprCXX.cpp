@@ -1495,8 +1495,11 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
                        << Ty << FullRange);
     }
     if (getLangOpts().CPlusPlus2b) {
-      if (Ty->getAs<AutoType>())
-        Diag(TyBeginLoc, diag::warn_cxx20_compat_auto_expr) << FullRange;
+      if (auto *TyAuto = Ty->getAs<AutoType>())
+        Diag(TyBeginLoc, TyAuto->isDecltypeAuto()
+                             ? diag::ext_decltype_auto_expr
+                             : diag::warn_cxx20_compat_auto_expr)
+            << FullRange;
     }
     Expr *Deduce = Inits[0];
     if (isa<InitListExpr>(Deduce))
@@ -1512,6 +1515,14 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
       return ExprError();
 
     Ty = DeducedType;
+    if (Ty->isReferenceType()) {
+      // decltype(auto)(x) takes a shortcut; see also P0849R2.
+      // FIXME: Substitute auto here to prevent a crash when diagnosing lifetime
+      // of array argument in constant evaluation. Shouldn't be done this way.
+      return BuildCXXFunctionalCastExpr(SubstAutoTypeSourceInfo(TInfo, Ty), Ty,
+                                        LParenOrBraceLoc, Deduce,
+                                        RParenOrBraceLoc);
+    }
     Entity = InitializedEntity::InitializeTemporary(TInfo, Ty);
   }
 
