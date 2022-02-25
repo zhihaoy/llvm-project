@@ -442,15 +442,6 @@ namespace DecltypeAutoShouldNotBeADecltypeSpecifier {
       B() : decltype(auto)() {} // expected-error {{'decltype(auto)' not allowed here}}
     };
   }
-
-  namespace Cast {
-    void foo() {
-      (void)decltype(auto)(0); // cxx14_20-error{{'decltype(auto)' not allowed here}} \
-                                  cxx2b-warning{{functional-style cast to 'decltype(auto)' is a Clang extension}}
-      (void)decltype(auto){0}; // cxx14_20-error{{'decltype(auto)' not allowed here}} \
-                                  cxx2b-warning{{functional-style cast to 'decltype(auto)' is a Clang extension}}
-    }
-  }
 }
 
 namespace CurrentInstantiation {

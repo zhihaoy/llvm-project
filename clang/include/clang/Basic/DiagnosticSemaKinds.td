@@ -2387,9 +2387,6 @@ def err_decltype_auto_compound_type : Error<
   "cannot form %select{pointer to|reference to|array of}0 'decltype(auto)'">;
 def err_decltype_auto_initializer_list : Error<
   "cannot deduce 'decltype(auto)' from initializer list">;
-def ext_decltype_auto_expr : ExtWarn<
-  "functional-style cast to 'decltype(auto)' is a Clang extension">,
-  InGroup<DiagGroup<"decltype-auto-cast">>;
 
 // C++17 deduced class template specialization types
 def err_deduced_class_template_compound_type : Error<
