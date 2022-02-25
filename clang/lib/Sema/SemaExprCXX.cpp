@@ -1517,6 +1517,8 @@ Sema::BuildCXXTypeConstructExpr(TypeSourceInfo *TInfo,
     Ty = DeducedType;
     if (Ty->isReferenceType()) {
       // decltype(auto)(x) takes a shortcut; see also P0849R2.
+      // FIXME: Substitute auto here to prevent a crash when diagnosing lifetime
+      // of array argument in constant evaluation. Shouldn't be done this way.
       return BuildCXXFunctionalCastExpr(SubstAutoTypeSourceInfo(TInfo, Ty), Ty,
                                         LParenOrBraceLoc, Deduce,
                                         RParenOrBraceLoc);
