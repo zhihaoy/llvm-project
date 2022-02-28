@@ -960,7 +960,7 @@ void CharacterLiteral::print(unsigned Val, CharacterKind Kind,
     break;
   }
 
-  auto Escaped = escapeCStyle<EscapeChar::Single>(Val);
+  StringRef Escaped = escapeCStyle<EscapeChar::Single>(Val);
   if (!Escaped.empty()) {
     OS << "'" << Escaped << "'";
   } else {
@@ -1134,7 +1134,7 @@ void StringLiteral::outputString(raw_ostream &OS) const {
   unsigned LastSlashX = getLength();
   for (unsigned I = 0, N = getLength(); I != N; ++I) {
     uint32_t Char = getCodeUnit(I);
-    auto Escaped = escapeCStyle<EscapeChar::Double>(Char);
+    StringRef Escaped = escapeCStyle<EscapeChar::Double>(Char);
     if (Escaped.empty()) {
       // FIXME: Convert UTF-8 back to codepoints before rendering.
 

@@ -655,12 +655,12 @@ static bool TryPrintAsStringLiteral(raw_ostream &Out,
   }
 
   for (auto &Val : Inits) {
-    auto Char64 = Val.getInt().getExtValue();
+    int64_t Char64 = Val.getInt().getExtValue();
     if (!isASCII(Char64))
       return false; // Bye bye, see you in integers.
     auto Ch = static_cast<unsigned char>(Char64);
     // The diagnostic message is 'quoted'
-    auto Escaped = escapeCStyle<EscapeChar::SingleAndDouble>(Ch);
+    StringRef Escaped = escapeCStyle<EscapeChar::SingleAndDouble>(Ch);
     if (Escaped.empty()) {
       if (!isPrintable(Ch))
         return false;
