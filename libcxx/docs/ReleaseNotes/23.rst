@@ -48,6 +48,11 @@ Implemented Papers
 - P2164R9: ``views::enumerate`` (`Github <https://llvm.org/PR105251>`__)
 - P2322R6: ``ranges::fold`` (`Github <https://llvm.org/PR105208>`__)
 - P4144R1: Remove ``span``'s ``initializer_list`` constructor for C++26 (`Github <https://llvm.org/PR189612>`__)
+- P2322R6 (partial): ``ranges::fold_left_first`` and ``ranges::fold_left_first_with_iter`` are supported
+  (`Github <https://llvm.org/PR105208>`__)
+- P0792R14: ``function_ref`` : a type-erased callable reference (`Github <https://llvm.org/PR105376>`__)
+- P3948R1: ``constant_wrapper`` is the only tool needed for passing constant expressions via function arguments (`Github <https://llvm.org/PR189604>`__)
+- P3961R1: Less double indirection in ``function_ref`` (RU-220) (`Github <https://llvm.org/PR189606>`__)
 
 Improvements and New Features
 -----------------------------
