@@ -76,18 +76,18 @@ static_assert(!std::is_constructible_v<std::function_ref<void(A*) const>, void (
 static_assert(std::is_nothrow_constructible_v<std::function_ref<void(int, double) const noexcept>,
                                               void (*)(int, double) noexcept>);
 
-int fn() { return 42; }
+constexpr int fn() { return 42; }
 
-int fn_noexcept(int i, A a) noexcept { return i + a.i; }
+constexpr int fn_noexcept(int i, A a) noexcept { return i + a.i; }
 
 struct Int {
   int i;
-  Int(int ii) noexcept : i(ii) {}
+  constexpr Int(int ii) noexcept : i(ii) {}
 };
 
-int needs_conversion(Int x, Int y, Int z) noexcept { return x.i + y.i + z.i; }
+constexpr int needs_conversion(Int x, Int y, Int z) noexcept { return x.i + y.i + z.i; }
 
-void test() {
+constexpr bool test() {
   {
     // simple case
     std::function_ref<int()> f(&fn);
@@ -118,6 +118,11 @@ void test() {
     std::function_ref<int(int, A) const noexcept> f(&fn_noexcept);
     assert(f(4, A{5}) == 9);
   }
+
+  return true;
+}
+
+void non_constexpr_test() {
   {
     std::function_ref<Int(int, int, int)> f(&needs_conversion);
     assert(f(1, 2, 3).i == 6);
@@ -135,5 +140,7 @@ void test() {
 
 int main(int, char**) {
   test();
+  non_constexpr_test();
+  static_assert(test());
   return 0;
 }

@@ -59,6 +59,8 @@ private:
   union __storage_t {
     void* __obj_ptr_;
     void const* __obj_const_ptr_;
+    _Rp (*__fn_ptr_)(_ArgTypes...);
+    _Rp (*__fn_ptr_noexcept_)(_ArgTypes...) noexcept;
 
     _LIBCPP_HIDE_FROM_ABI constexpr explicit __storage_t() noexcept : __obj_ptr_(nullptr) {}
 
@@ -72,7 +74,19 @@ private:
         }
       } else {
         static_assert(is_function_v<_Tp>);
-        __obj_ptr_ = reinterpret_cast<void*>(__ptr);
+        if constexpr (is_nothrow_invocable_v<_Tp, _ArgTypes...>) {
+          if constexpr (requires { __fn_ptr_noexcept_ = __ptr; }) {
+            __fn_ptr_noexcept_ = __ptr;
+          } else {
+            __obj_ptr_ = reinterpret_cast<void*>(__ptr);
+          }
+        } else {
+          if constexpr (requires { __fn_ptr_ = __ptr; }) {
+            __fn_ptr_ = __ptr;
+          } else {
+            __obj_ptr_ = reinterpret_cast<void*>(__ptr);
+          }
+        }
       }
     }
   };
@@ -87,7 +101,19 @@ private:
       }
     } else {
       static_assert(is_function_v<_Tp>);
-      return reinterpret_cast<_Tp*>(__storage.__obj_ptr_);
+      if constexpr (is_nothrow_invocable_v<_Tp, _ArgTypes...>) {
+        if constexpr (requires(_Tp* __ptr) { __storage.__fn_ptr_noexcept_ = __ptr; }) {
+          return __storage.__fn_ptr_noexcept_;
+        } else {
+          return reinterpret_cast<_Tp*>(__storage.__obj_ptr_);
+        }
+      } else {
+        if constexpr (requires(_Tp* __ptr) { __storage.__fn_ptr_ = __ptr; }) {
+          return __storage.__fn_ptr_;
+        } else {
+          return reinterpret_cast<_Tp*>(__storage.__obj_ptr_);
+        }
+      }
     }
   }
 
@@ -99,7 +125,7 @@ private:
 public:
   template <class _Fp>
     requires is_function_v<_Fp> && __is_invocable_using<_Fp>
-  _LIBCPP_HIDE_FROM_ABI function_ref(_Fp* __fn_ptr) noexcept
+  _LIBCPP_HIDE_FROM_ABI constexpr function_ref(_Fp* __fn_ptr) noexcept
       : __storage_(__fn_ptr),
         __call_([](__storage_t __storage, _ArgTypes&&... __args) static noexcept(__is_noexcept) -> _Rp {
           return __get<_Fp>(__storage)(std::forward<_ArgTypes>(__args)...);
