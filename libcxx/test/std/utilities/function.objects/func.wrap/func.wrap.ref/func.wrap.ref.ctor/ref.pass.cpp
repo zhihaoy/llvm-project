@@ -155,6 +155,12 @@ struct NeedsConversion {
   constexpr int operator()(Int x, Int y, Int z) const noexcept { return x.i + y.i + z.i; }
 };
 
+constexpr int fn() { return 5; }
+constexpr int fn_noexcept() noexcept { return 6; }
+
+constexpr int one() noexcept { return 1; }
+constexpr int two() noexcept { return 2; }
+
 constexpr bool test() {
   {
     std::function_ref<void()> f(l1);
@@ -216,6 +222,37 @@ constexpr bool test() {
 
     std::function_ref<Int(int, int, int) const noexcept> f4(c);
     assert(f4(1, 2, 3).i == 6);
+  }
+
+  {
+    // noexcept conversion
+    std::function_ref<int() noexcept> f1(&fn_noexcept);
+    std::function_ref<int()> f2(f1);
+    assert(f2() == 6);
+  }
+
+  {
+    // const conversion
+    std::function_ref<int() const> f1(&fn_noexcept);
+    std::function_ref<int()> f2(f1);
+    assert(f2() == 6);
+  }
+
+  {
+    // const noexcept conversion
+    std::function_ref<int() const noexcept> f1(&fn_noexcept);
+    std::function_ref<int()> f2(f1);
+    assert(f2() == 6);
+  }
+
+  {
+    // double unwrapping
+    std::function_ref<int() const noexcept> f1(&one);
+    std::function_ref<int()> f2(f1);
+
+    f1 = &two;
+    assert(f2() == 1 || f2() == 2);
+    LIBCPP_ASSERT(f2() == 1);
   }
 
   return true;
